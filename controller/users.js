@@ -2,50 +2,60 @@ const signupModels = require('../models/users');
 const async = require('async');
 const bcrypt = require('bcrypt');
 
+// custom middleware create
+    const LoggerMiddleware = (req,res,next) =>{
+    console.log(`Logged  ${req.url}  ${req.method} -- ${new Date()}`)
+    next();
+}
 
 
- function addSignupDetails(req, res) {
+async function hashConversion(req, res, next) {
+  console.log("hashConversion");
   console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon(:) when writing routes.
   console.log("req.body", req.body); //Generally used in POST/PUT requests.
   console.log("req.query", req.query); //req.query is mostly used for searching,sorting, filtering, pagination........exm - GET  http://localhost:3000/animals?page=10
 
+  await bcrypt.hash(req.body.password, 10, (err,hash)=>{
+    console.log("hash",hash);
+    if(err){
+      // console.log(err)
+    }
+    console.log("password");
+    console.log(hash);
+    req.hashedPassword = hash
+    next();
+
+  });
+}
+
+
+
+async function  addSignupDetails(req, res) {
+  console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon(:) when writing routes.
+  console.log("req.body", req.body); //Generally used in POST/PUT requests.
+  console.log("req.query", req.query); //req.query is mostly used for searching,sorting, filtering, pagination........exm - GET  http://localhost:3000/animals?page=10
+  
+  
+    console.log(req.hashedPassword)
     async.waterfall([
+       
         function(callback){
+
             const signupObj = {
                 email: req.body.email,
-                password: req.body.password
+                password: req.hashedPassword                
             }
-
-            if (!(req.body.email && req.body.password)) {
-              return res.status(400).send({ error: "Data not formatted properly" });
-            }
-
-            const details = new signupModels(signupObj);
-
-           
-
-            // const salt = bcrypt.hash(details.password, salt);
-            
-              details.password =  bcrypt.hash(req.query.password, 10, (err,hash)=>{
-                console.log("hash",hash);
-              });
-              console.log(req.query.password)
+            const details = new signupModels(signupObj);           
+            console.log(req.query.password)
 
               details.save().then((result)=>{
-                res.status(201).send(result);               
-                  callback(null,details);
+                  console.log(result)
+                  callback(null,result);
               }).catch((err)=>{
                   console.log("error",err)
                   callback(true);
-              })
-        
-           
-
-
-           
-        },
-
-       
+              })          
+        },       
     ],
     (err,details)=>{
         if(err){
@@ -60,64 +70,68 @@ const bcrypt = require('bcrypt');
     }
     )
 }
+////////////////////////////////////////////////////////////////////
+function getLoginData(req,res){
 
-//  -----------------------------------get login data------------------------------------------
-
-//  function getLoginData(req,res){
-
-//   console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon(:) when writing routes.
-//   console.log("req.body", req.body); //Generally used in POST/PUT requests.
-//   console.log("req.query", req.query); //req.query is mostly used for searching,sorting, filtering, pagination........exm - GET  http://localhost:3000/animals?page=10
-
-//   async.waterfall([
-//       function (callback){
-
-//         const body = req.body;
-//         const user = await signupModels.findOne({ email: body.email });
-          
-//           if(err){
-//             console.log(err);
-//             callback(true)
-//           }
-//           console.log("loginData",user);
-//             callback(null, user)
-//         };
+    console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon when writing routes.
+    console.log("req.body", req.body); //Generally used in POST/PUT requests.
+    console.log("req.query", req.query); //req.query is mostly used for searching,sorting, filtering, pagination........exm - GET  http://localhost:3000/animals?page=10
+  
+    async.waterfall([
+        function (callback){
+  
+          signupModels.findOne({ email: req.query.email },function(err,docs){
+  
+              if(err){
+                  console.log(err);
+                  callback(true,null)
+                }
+                console.log("loginData",docs);
+                  callback(null, docs)
+          });
             
-//       function (user,callback){
-        
-//         if (user){
-//           const validPassword = await bcrypt.compare(body.password, user.password);
-//           if (validPassword) {
-//                   res.status(200).json({ message: "Valid password" });
-//                   callback(null);
-//              } else {
-//                   res.status(400).json({ error: "Invalid Password" });
-//                   callback(true);
-//              }
-//              } else {
-//                   res.status(401).json({ error: "User does not exist" });
-//              } 
-//         }
-//       ),      
-//   ],
-
-//   (err, user) => {
-//     if (err) {     
-//       res.status(400).json({ success: false, err: err });
-//     } else { 
-//       let data = {        
-//         user: user,
-//       };
-//       res.status(200).json({ success: true, data: data });
-//     }
-//   }
-// );
-// }
-
-
+          },
+              
+        function (docs,callback){
+          
+          console.log("user",docs);
+          if (docs){
+  
+              bcrypt.compare(req.query.password, user.password, function(err, validate) {
+                  if(!validate){
+                    console.log("pasword match ", validate)
+                    callback(true,null)
+                  } else {
+                      console.log("pasword match ", validate)
+                      callback(null,docs)
+                  
+                  }
+              })
+  
+        }
+  
+      }
+            
+    ],
+  
+    (err, docs) => {
+      if (err) {     
+        res.status(400).json({ success: false, err: err , msg:"password dosn't match" });
+      } else { 
+        let data = {        
+          user: user,
+          msg:"password match"
+        };
+        res.status(200).json({ success: true, data: data });
+      }
+    }
+  );
+  } 
 
 module.exports = {
-    addSignupDetails
-    // ,
-    // getLoginData
+    LoggerMiddleware,
+    addSignupDetails,
+    getLoginData,
+    hashConversion
+    
 };

@@ -11,6 +11,7 @@ const signupSchema = new mongoose.Schema({
         required:true
     }
 
+
 });
 
 module.exports = mongoose.model("usersInfo", signupSchema);
