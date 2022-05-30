@@ -2,12 +2,9 @@ const signupModels = require('../models/users');
 const async = require('async');
 const bcrypt = require('bcrypt');
 
-// custom middleware create
-    const LoggerMiddleware = (req,res,next) =>{
-    console.log(`Logged  ${req.url}  ${req.method} -- ${new Date()}`)
-    next();
-}
 
+
+// password changed
 
 async function hashConversion(req, res, next) {
   console.log("hashConversion");
@@ -18,17 +15,15 @@ async function hashConversion(req, res, next) {
   await bcrypt.hash(req.body.password, 10, (err,hash)=>{
     console.log("hash",hash);
     if(err){
-      // console.log(err)
+      console.log(err)
     }
-    console.log("password");
+    console.log("password changed");
     console.log(hash);
     req.hashedPassword = hash
     next();
 
   });
 }
-
-
 
 async function  addSignupDetails(req, res) {
   console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon(:) when writing routes.
@@ -37,8 +32,7 @@ async function  addSignupDetails(req, res) {
   
   
     console.log(req.hashedPassword)
-    async.waterfall([
-       
+    async.waterfall([       
         function(callback){
 
             const signupObj = {
@@ -57,7 +51,7 @@ async function  addSignupDetails(req, res) {
               })          
         },       
     ],
-    (err,details)=>{
+(err,details)=>{
         if(err){
             res.status(400).json({sucess:false, err: err})
         }
@@ -70,7 +64,7 @@ async function  addSignupDetails(req, res) {
     }
     )
 }
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////-------------------------------///////////////////////////////
 function getLoginData(req,res){
 
     console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon when writing routes.
@@ -97,7 +91,7 @@ function getLoginData(req,res){
           console.log("user",docs);
           if (docs){
   
-              bcrypt.compare(req.query.password, user.password, function(err, validate) {
+              bcrypt.compare(req.query.password, docs.password, function(err, validate) {
                   if(!validate){
                     console.log("pasword match ", validate)
                     callback(true,null)
@@ -119,7 +113,7 @@ function getLoginData(req,res){
         res.status(400).json({ success: false, err: err , msg:"password dosn't match" });
       } else { 
         let data = {        
-          user: user,
+          docs: docs,
           msg:"password match"
         };
         res.status(200).json({ success: true, data: data });
@@ -129,7 +123,6 @@ function getLoginData(req,res){
   } 
 
 module.exports = {
-    LoggerMiddleware,
     addSignupDetails,
     getLoginData,
     hashConversion
