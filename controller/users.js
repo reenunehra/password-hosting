@@ -29,15 +29,17 @@ async function  addSignupDetails(req, res) {
   console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon(:) when writing routes.
   console.log("req.body", req.body); //Generally used in POST/PUT requests.
   console.log("req.query", req.query); //req.query is mostly used for searching,sorting, filtering, pagination........exm - GET  http://localhost:3000/animals?page=10
-  
+  console.log(req.file)
   
     console.log(req.hashedPassword)
     async.waterfall([       
         function(callback){
 
             const signupObj = {
+                name:req.body.name,
                 email: req.body.email,
-                password: req.hashedPassword                
+                password: req.hashedPassword 
+                              
             }
             const details = new signupModels(signupObj);           
             console.log(req.query.password)
@@ -64,7 +66,7 @@ async function  addSignupDetails(req, res) {
     }
     )
 }
-/////////////////////////////////////-------------------------------///////////////////////////////
+/////////////////////////////////////---------getdata-------login----------------------///////////////////////////////
 function getLoginData(req,res){
 
     console.log("req.params", req.params);   //get//properties attached to the url,prefix the parameter name with a colon when writing routes.
@@ -82,8 +84,7 @@ function getLoginData(req,res){
                 }
                 console.log("loginData",docs);
                   callback(null, docs)
-          });
-            
+          });            
           },
               
         function (docs,callback){
@@ -94,18 +95,14 @@ function getLoginData(req,res){
               bcrypt.compare(req.query.password, docs.password, function(err, validate) {
                   if(!validate){
                     console.log("pasword match ", validate)
-                    callback(true,null)
+                    callback(true,null)  
                   } else {
                       console.log("pasword match ", validate)
-                      callback(null,docs)
-                  
+                      callback(null,docs)                  
                   }
-              })
-  
-        }
-  
-      }
-            
+              })  
+        }  
+      }            
     ],
   
     (err, docs) => {
@@ -117,14 +114,62 @@ function getLoginData(req,res){
           msg:"password match"
         };
         res.status(200).json({ success: true, data: data });
+
       }
     }
   );
   } 
 
+
+
+  //-------------------------------------------------------upload image--------------------------------------
+  function uploadpictures(req,res){
+  
+    // req.file is the `profile-file` file
+    // req.body will hold the text fields, if there were any
+    console.log(JSON.stringify(req.file))
+    var response = '<a href="/">Home</a><br>'
+    response += "Files uploaded successfully.<br>"
+    response += `<img src="${req.file.path}" /><br>`
+    return res.send(response)  
+  }
+
+// function getLoginData(req,res){
+//   console.log("UsersID And Status");
+//   console.log("req.params", req.params);   
+//   console.log("req.body", req.body); 
+//   console.log("req.query", req.query); 
+
+//   async.waterfall(
+//   [
+//       function (callback){
+//         signupModels.find({},(err, usersData)=>{
+//           if(err){
+//             console.log(err);
+//             callback(true, usersData)
+//           }
+//             callback(null, usersData)
+//         });
+//       },       
+//   ],
+//   (err, usersData) => {
+//     if (err) {     
+//       res.status(400).json({ success: false, err: err });
+//     } else { 
+//       let data = {       
+//         Users: usersData,        
+//       };
+//       console.log(data) 
+//       res.status(200).json({ success: true, data: data });
+//     }
+//   }
+// );
+// }
+
 module.exports = {
     addSignupDetails,
     getLoginData,
-    hashConversion
+    hashConversion,
+    uploadpictures
     
 };
